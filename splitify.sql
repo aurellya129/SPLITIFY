@@ -1,0 +1,80 @@
+CREATE DATABASE IF NOT EXISTS splitify
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE splitify;
+
+CREATE TABLE patungans (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(16) NOT NULL,
+  judul VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  UNIQUE KEY patungans_slug_unique (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE participants (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  patungan_id BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(40) NOT NULL,
+  total_owed BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  total_paid BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  net BIGINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  CONSTRAINT participants_patungan_id_foreign FOREIGN KEY (patungan_id)
+    REFERENCES patungans (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE receipts (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  patungan_id BIGINT UNSIGNED NOT NULL,
+  payer_id BIGINT UNSIGNED NOT NULL,
+  tax_percent DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+  total BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  CONSTRAINT receipts_patungan_id_foreign FOREIGN KEY (patungan_id)
+    REFERENCES patungans (id) ON DELETE CASCADE,
+  CONSTRAINT receipts_payer_id_foreign FOREIGN KEY (payer_id)
+    REFERENCES participants (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE items (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  receipt_id BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  price BIGINT UNSIGNED NOT NULL,
+  qty INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  CONSTRAINT items_receipt_id_foreign FOREIGN KEY (receipt_id)
+    REFERENCES receipts (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE item_assignments (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  item_id BIGINT UNSIGNED NOT NULL,
+  participant_id BIGINT UNSIGNED NOT NULL,
+  qty DECIMAL(8,2) NOT NULL,
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  CONSTRAINT item_assignments_item_id_foreign FOREIGN KEY (item_id)
+    REFERENCES items (id) ON DELETE CASCADE,
+  CONSTRAINT item_assignments_participant_id_foreign FOREIGN KEY (participant_id)
+    REFERENCES participants (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE transfers (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  patungan_id BIGINT UNSIGNED NOT NULL,
+  from_id BIGINT UNSIGNED NOT NULL,
+  to_id BIGINT UNSIGNED NOT NULL,
+  amount BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  CONSTRAINT transfers_patungan_id_foreign FOREIGN KEY (patungan_id)
+    REFERENCES patungans (id) ON DELETE CASCADE,
+  CONSTRAINT transfers_from_id_foreign FOREIGN KEY (from_id)
+    REFERENCES participants (id) ON DELETE CASCADE,
+  CONSTRAINT transfers_to_id_foreign FOREIGN KEY (to_id)
+    REFERENCES participants (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
